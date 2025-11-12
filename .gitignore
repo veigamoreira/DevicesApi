@@ -1,0 +1,63 @@
+﻿# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# ASP.NET Core secrets
+secrets.json
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Rider
+.idea/
+
+# Logs
+*.log
+
+*.vs
+# Docker
+*.pid
+*.seed
+*.db
+Dockerfile.*
+docker-compose.*
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+.nuget/
+packages/
+*.snupkg
+
+# Entity Framework
+Migrations/
+
+# OS-specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Others
+*.swp
+*.bak
+*.tmp
+*.orig
