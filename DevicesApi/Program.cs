@@ -1,8 +1,7 @@
+using DevicesApi.Mappings;
 using DevicesRepository;
 using DevicesRepository.Interfaces;
 using DevicesRepository.Repositories;
-using DevicesService.Interfaces;
-using DevicesService.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -24,7 +23,7 @@ builder.Services.AddSwaggerGen(c =>
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Devices API", Version = "v1" });
 });
 
-
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var app = builder.Build();
 

@@ -1,6 +1,5 @@
 ﻿using DevicesDomain.DTOs;
 using DevicesDomain.Models;
-using DevicesService.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DevicesApi.Controllers
@@ -61,18 +60,33 @@ namespace DevicesApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, DeviceUpdateDto dto)
         {
-            var success = await _service.UpdateAsync(id, dto);
-            if (!success) return BadRequest("Device cannot be updated.");
-            return NoContent();
+            try
+            {
+                var updated = await _service.UpdateAsync(id, dto);
+                if (updated == null) return NotFound();
+                return Ok(updated);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         // DELETE: api/devices/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var success = await _service.DeleteAsync(id);
-            if (!success) return BadRequest("Device cannot be deleted.");
-            return NoContent();
+            try
+            {
+                var success = await _service.DeleteAsync(id);
+                if (!success) return NotFound();
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+
         }
     }
 }

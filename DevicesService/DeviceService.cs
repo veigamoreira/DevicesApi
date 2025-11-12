@@ -1,69 +1,83 @@
-﻿using DevicesDomain.DTOs;
+﻿using AutoMapper;
+using DevicesDomain.DTOs;
 using DevicesDomain.Models;
 using DevicesRepository.Interfaces;
-using DevicesService.Interfaces;
 
-namespace DevicesService.Services
+public class DeviceService : IDeviceService
 {
-    public class DeviceService : IDeviceService
+    private readonly IDeviceRepository _repository;
+    private readonly IMapper _mapper;
+
+    public DeviceService(IDeviceRepository repository, IMapper mapper)
     {
-        private readonly IDeviceRepository _repository;
+        _repository = repository;
+        _mapper = mapper;
+    }
 
-        public DeviceService(IDeviceRepository repository)
+    public async Task<List<DeviceReadDto>> GetAllAsync()
+    {
+        var devices = await _repository.GetAllAsync();
+        return _mapper.Map<List<DeviceReadDto>>(devices);
+    }
+
+    public async Task<DeviceReadDto?> GetByIdAsync(Guid id)
+    {
+        var device = await _repository.GetByIdAsync(id);
+        return device == null ? null : _mapper.Map<DeviceReadDto>(device);
+    }
+
+    public async Task<List<DeviceReadDto>> GetByBrandAsync(string brand)
+    {
+        var devices = await _repository.GetByBrandAsync(brand);
+        return _mapper.Map<List<DeviceReadDto>>(devices);
+    }
+
+    public async Task<List<DeviceReadDto>> GetByStateAsync(DeviceState state)
+    {
+        var devices = await _repository.GetByStateAsync(state);
+        return _mapper.Map<List<DeviceReadDto>>(devices);
+    }
+
+    public async Task<DeviceReadDto> CreateAsync(DeviceCreateDto dto)
+    {
+        var device = _mapper.Map<Device>(dto);
+        device.Id = Guid.NewGuid();
+        device.CreatedAt = DateTime.UtcNow;
+
+        var created = await _repository.CreateAsync(device);
+        return _mapper.Map<DeviceReadDto>(created);
+    }
+
+    public async Task<DeviceReadDto?> UpdateAsync(Guid id, DeviceUpdateDto dto)
+    {
+        var existing = await _repository.GetByIdAsync(id);
+        if (existing == null) return null;
+
+        // Regra: não permitir alteração de Name ou Brand se o dispositivo estiver em uso
+        if (existing.State == DeviceState.InUse)
         {
-            _repository = repository;
+            if (!string.IsNullOrWhiteSpace(dto.Name) && dto.Name != existing.Name)
+                throw new InvalidOperationException("Name cannot be updated while device is In-use.");
+
+            if (!string.IsNullOrWhiteSpace(dto.Brand) && dto.Brand != existing.Brand)
+                throw new InvalidOperationException("Brand cannot be updated while device is In-use.");
         }
 
-        public async Task<List<Device>> GetAllAsync() => await _repository.GetAllAsync();
 
-        public async Task<Device?> GetByIdAsync(Guid id) => await _repository.GetByIdAsync(id);
+        _mapper.Map(dto, existing);
+        var updated = await _repository.UpdateAsync(existing);
+        return updated ? _mapper.Map<DeviceReadDto>(existing) : null;
+    }
+    public async Task<bool> DeleteAsync(Guid id)
+    {
+        var device = await _repository.GetByIdAsync(id);
+        if (device == null) return false;
 
-        public async Task<List<Device>> GetByBrandAsync(string brand) => await _repository.GetByBrandAsync(brand);
+        // Regra: não permitir deletar se o dispositivo estiver em uso
 
-        public async Task<List<Device>> GetByStateAsync(DeviceState state) => await _repository.GetByStateAsync(state);
+        if (device.State == DeviceState.InUse)
+            throw new InvalidOperationException("In-use devices cannot be deleted.");
 
-        public async Task<Device> CreateAsync(DeviceCreateDto dto)
-        {
-            if (!Enum.TryParse<DeviceState>(dto.State, ignoreCase: true, out var parsedState))
-            {
-                throw new ArgumentException($"Invalid State: {dto.State}");
-            }
-
-            var device = new Device
-            {
-                Id = Guid.NewGuid(),
-                Name = dto.Name,
-                Brand = dto.Brand,
-                State = parsedState,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            return await _repository.CreateAsync(device);
-        }
-
-        public async Task<bool> UpdateAsync(Guid id, DeviceUpdateDto dto)
-        {
-            var device = await _repository.GetByIdAsync(id);
-            if (device == null) return false;
-
-            if (device.State == DeviceState.InUse && (dto.Name != null || dto.Brand != null))
-            {
-                return false;
-            }
-
-            if (dto.Name != null) device.Name = dto.Name;
-            if (dto.Brand != null) device.Brand = dto.Brand;
-            if (dto.State.HasValue) device.State = dto.State.Value;
-
-            return await _repository.UpdateAsync(device);
-        }
-
-        public async Task<bool> DeleteAsync(Guid id)
-        {
-            var device = await _repository.GetByIdAsync(id);
-            if (device == null || device.State == DeviceState.InUse) return false;
-
-            return await _repository.DeleteAsync(id);
-        }
+        return await _repository.DeleteAsync(id);
     }
 }

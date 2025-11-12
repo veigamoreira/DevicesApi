@@ -1,16 +1,13 @@
 ﻿using DevicesDomain.DTOs;
 using DevicesDomain.Models;
 
-namespace DevicesService.Interfaces
+public interface IDeviceService
 {
-    public interface IDeviceService
-    {
-        Task<List<Device>> GetAllAsync();
-        Task<Device?> GetByIdAsync(Guid id);
-        Task<List<Device>> GetByBrandAsync(string brand);
-        Task<List<Device>> GetByStateAsync(DeviceState state);
-        Task<Device> CreateAsync(DeviceCreateDto dto);
-        Task<bool> UpdateAsync(Guid id, DeviceUpdateDto dto);
-        Task<bool> DeleteAsync(Guid id);
-    }
+    Task<List<DeviceReadDto>> GetAllAsync();
+    Task<DeviceReadDto?> GetByIdAsync(Guid id);
+    Task<List<DeviceReadDto>> GetByBrandAsync(string brand);
+    Task<List<DeviceReadDto>> GetByStateAsync(DeviceState state);
+    Task<DeviceReadDto> CreateAsync(DeviceCreateDto dto);
+    Task<DeviceReadDto?> UpdateAsync(Guid id, DeviceUpdateDto dto);
+    Task<bool> DeleteAsync(Guid id);
 }
