@@ -20,9 +20,8 @@ namespace DevicesRepository.Repositories
             await _context.Devices.FindAsync(id);
 
         public async Task<List<Device>> GetByBrandAsync(string brand) =>
-            await _context.Devices
-                .Where(d => d.Brand.Equals(brand, StringComparison.OrdinalIgnoreCase))
-                .ToListAsync();
+           await _context.Devices
+                 .Where(d => EF.Functions.Like(d.Brand, $"%{brand}%")).ToListAsync();
 
         public async Task<List<Device>> GetByStateAsync(DeviceState state) =>
             await _context.Devices

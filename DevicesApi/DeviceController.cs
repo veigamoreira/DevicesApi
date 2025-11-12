@@ -1,5 +1,6 @@
 ﻿using DevicesDomain.DTOs;
 using DevicesDomain.Models;
+using DevicesDomain.ValidationRules;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DevicesApi.Controllers
@@ -17,7 +18,7 @@ namespace DevicesApi.Controllers
 
         // GET: api/devices
         [HttpGet]
-        public async Task<ActionResult<List<Device>>> GetAll()
+        public async Task<ActionResult<List<DeviceReadDto>>> GetAll()
         {
             var devices = await _service.GetAllAsync();
             return Ok(devices);
@@ -25,7 +26,7 @@ namespace DevicesApi.Controllers
 
         // GET: api/devices/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<Device>> GetById(Guid id)
+        public async Task<ActionResult<DeviceReadDto>> GetById(Guid id)
         {
             var device = await _service.GetByIdAsync(id);
             if (device == null) return NotFound();
@@ -34,7 +35,7 @@ namespace DevicesApi.Controllers
 
         // GET: api/devices/brand/{brand}
         [HttpGet("brand/{brand}")]
-        public async Task<ActionResult<List<Device>>> GetByBrand(string brand)
+        public async Task<ActionResult<List<DeviceReadDto>>> GetByBrand(string brand)
         {
             var devices = await _service.GetByBrandAsync(brand);
             return Ok(devices);
@@ -42,23 +43,33 @@ namespace DevicesApi.Controllers
 
         // GET: api/devices/state/{state}
         [HttpGet("state/{state}")]
-        public async Task<ActionResult<List<Device>>> GetByState(DeviceState state)
+        public async Task<ActionResult<List<DeviceReadDto>>> GetByState(string state)
         {
-            var devices = await _service.GetByStateAsync(state);
+            if (!Enum.TryParse<DeviceState>(state, true, out var parsedState))
+                return BadRequest(new { error = $"Invalid state: {state}" });
+
+            var devices = await _service.GetByStateAsync(parsedState);
             return Ok(devices);
         }
 
         // POST: api/devices
         [HttpPost]
-        public async Task<ActionResult<Device>> Create(DeviceCreateDto dto)
+        public async Task<ActionResult<DeviceReadDto>> Create(DeviceCreateDto dto)
         {
-            var device = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = device.Id }, device);
+            try
+            {
+                var device = await _service.CreateAsync(dto);
+                return CreatedAtAction(nameof(GetById), new { id = device.Id }, device);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         // PUT: api/devices/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, DeviceUpdateDto dto)
+        public async Task<ActionResult<DeviceReadDto>> Update(Guid id, DeviceUpdateDto dto)
         {
             try
             {
@@ -66,7 +77,11 @@ namespace DevicesApi.Controllers
                 if (updated == null) return NotFound();
                 return Ok(updated);
             }
-            catch (InvalidOperationException ex)
+            catch (BusinessRuleException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (ArgumentException ex)
             {
                 return BadRequest(new { error = ex.Message });
             }
@@ -82,11 +97,10 @@ namespace DevicesApi.Controllers
                 if (!success) return NotFound();
                 return NoContent();
             }
-            catch (InvalidOperationException ex)
+            catch (BusinessRuleException ex)
             {
                 return BadRequest(new { error = ex.Message });
             }
-
         }
     }
 }

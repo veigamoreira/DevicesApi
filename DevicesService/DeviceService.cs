@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DevicesDomain.DTOs;
 using DevicesDomain.Models;
+using DevicesDomain.ValidationRules;
 using DevicesRepository.Interfaces;
 
 public class DeviceService : IDeviceService
@@ -53,16 +54,7 @@ public class DeviceService : IDeviceService
         var existing = await _repository.GetByIdAsync(id);
         if (existing == null) return null;
 
-        // Regra: não permitir alteração de Name ou Brand se o dispositivo estiver em uso
-        if (existing.State == DeviceState.InUse)
-        {
-            if (!string.IsNullOrWhiteSpace(dto.Name) && dto.Name != existing.Name)
-                throw new InvalidOperationException("Name cannot be updated while device is In-use.");
-
-            if (!string.IsNullOrWhiteSpace(dto.Brand) && dto.Brand != existing.Brand)
-                throw new InvalidOperationException("Brand cannot be updated while device is In-use.");
-        }
-
+        DeviceRules.ValidateUpdate(existing, dto);
 
         _mapper.Map(dto, existing);
         var updated = await _repository.UpdateAsync(existing);
@@ -73,10 +65,7 @@ public class DeviceService : IDeviceService
         var device = await _repository.GetByIdAsync(id);
         if (device == null) return false;
 
-        // Regra: não permitir deletar se o dispositivo estiver em uso
-
-        if (device.State == DeviceState.InUse)
-            throw new InvalidOperationException("In-use devices cannot be deleted.");
+        DeviceRules.ValidateDelete(device);
 
         return await _repository.DeleteAsync(id);
     }

@@ -7,6 +7,9 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Força escuta na porta 80 (necessário para Docker)
+//builder.WebHost.UseUrls("http://+:80");
+
 // Configura o DbContext com SQL Server
 builder.Services.AddDbContext<DevicesDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -26,6 +29,8 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var app = builder.Build();
+app.UseMiddleware<RequestLoggingMiddleware>();
+
 
 // Aplica migrations automaticamente
 using (var scope = app.Services.CreateScope())
