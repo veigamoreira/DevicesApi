@@ -1,6 +1,5 @@
 ﻿using DevicesDomain.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 
 namespace DevicesRepository
 {

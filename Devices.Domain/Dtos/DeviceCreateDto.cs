@@ -6,6 +6,6 @@ namespace DevicesDomain.DTOs
     {
         public string Name { get; set; } = string.Empty;
         public string Brand { get; set; } = string.Empty;
-        public DeviceState State { get; set; }
+        public string State { get; set; } = string.Empty;
     }
 }

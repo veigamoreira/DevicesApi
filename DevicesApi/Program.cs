@@ -1,46 +1,47 @@
+using DevicesRepository;
+using DevicesRepository.Interfaces;
+using DevicesRepository.Repositories;
 using DevicesService.Interfaces;
 using DevicesService.Services;
-using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Controllers
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault;
-    });
+// Configura o DbContext com SQL Server
+builder.Services.AddDbContext<DevicesDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
-// Application
+// Injeção de dependência
+builder.Services.AddScoped<IDeviceRepository, DeviceRepository>();
 builder.Services.AddScoped<IDeviceService, DeviceService>();
 
-// Infrastructure
-
-// Swagger (opcional para testes)
+// Swagger e MVC
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Devices API", Version = "v1" });
+});
+
+
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Aplica migrations automaticamente
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Devices API v1");
-    });
+    var db = scope.ServiceProvider.GetRequiredService<DevicesDbContext>();
+    db.Database.Migrate();
 }
 
-// Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseRouting();
+app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();

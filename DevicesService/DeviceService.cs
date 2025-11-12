@@ -24,12 +24,17 @@ namespace DevicesService.Services
 
         public async Task<Device> CreateAsync(DeviceCreateDto dto)
         {
+            if (!Enum.TryParse<DeviceState>(dto.State, ignoreCase: true, out var parsedState))
+            {
+                throw new ArgumentException($"Invalid State: {dto.State}");
+            }
+
             var device = new Device
             {
                 Id = Guid.NewGuid(),
                 Name = dto.Name,
                 Brand = dto.Brand,
-                State = dto.State,
+                State = parsedState,
                 CreatedAt = DateTime.UtcNow
             };
 
